@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes"><title>SLAP Rehab Log</title>
+<style>
+:root{--bg:#fff;--card:#f2f4f7;--tx:#14171c;--mut:#667;--ac:#2563eb;--in:#fff;--bd:#d5d9e0;--ok:#16a34a}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d24;--tx:#eef0f4;--mut:#9aa3b2;--ac:#4f8cff;--in:#0f1115;--bd:#2c313b}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,sans-serif;padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+header{padding:calc(12px + env(safe-area-inset-top)) 14px 8px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid var(--bd)}
+h1{font-size:19px;margin:0 0 8px}main{padding:12px 14px}
+.tabs{display:flex;gap:6px}.tabs button{flex:1}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+button{min-height:48px;border-radius:12px;border:1px solid var(--bd);background:var(--card);padding:0 12px;font-weight:600}
+button.on,button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.row{display:flex;gap:8px;margin:8px 0;align-items:center}.row>*{flex:1}
+select,input,textarea{width:100%;min-height:48px;border-radius:12px;border:1px solid var(--bd);background:var(--in);padding:8px 10px}
+.ex{background:var(--card);border-radius:16px;padding:14px;margin:12px 0}
+.ex.done{outline:2px solid var(--ok)}
+.id{display:inline-block;background:var(--ac);color:#fff;border-radius:8px;padding:1px 8px;font-weight:700;margin-right:6px}
+.ex h3{margin:0 0 4px;font-size:16px}.ex a{color:var(--ac);font-size:14px}.par{color:var(--mut);font-size:14px;margin:4px 0 8px}
+.set{display:grid;grid-template-columns:34px 1fr 1fr;gap:8px;margin:6px 0;align-items:center}.set b{color:var(--mut)}
+.set input{text-align:center;font-size:18px}
+.lbl{font-size:12px;color:var(--mut);text-transform:uppercase;margin-top:6px}
+#timer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:9}
+#timer .t{font-size:34px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.hist{background:var(--card);border-radius:14px;padding:12px;margin:10px 0}.hist small{color:var(--mut)}
+.hist .x{float:right;min-height:36px}
+</style></head><body>
+<header><h1>SLAP Tear Rehab · Phase 1</h1>
+<div class="tabs"><button id="tL" class="on">Log</button><button id="tH">History</button></div></header>
+<main id="log">
+<div class="row"><select id="wk"><option>w/1</option><option>w/2</option><option>w/3</option><option>w/4</option></select><input type="date" id="dt"></div>
+<div class="row"><select id="part"><option value="all">Full workout (A–F)</option><option value="AB">Warm-up &amp; scapular (A–B)</option><option value="CD">Rotator cuff &amp; row (C–D)</option><option value="EF">Strength (E–F)</option></select></div>
+<div id="exs"></div>
+<div class="lbl">Session notes (feel / pain)</div>
+<textarea id="sn" rows="3" placeholder="Overall feel, pain 0–10, where…"></textarea>
+<div class="row"><button class="pri" id="save">Save workout</button></div>
+</main>
+<main id="hist" hidden><div class="row"><button id="csv">Export CSV</button></div><div id="hl"></div></main>
+<div id="timer"><div class="t" id="tt">00:00</div><div class="row"><button data-s="30">30s</button><button data-s="60">60s</button><button data-s="90">90s</button><button id="stop">Stop</button></div></div>
+<script>
+const EX=[
+["A1","Latissimus dorsi trigger point release with massage ball","Perform for 3 to 10 minutes as desired.","https://youtu.be/7gh2RRpktNQ?t=1002",0],
+["A2","Latissimus dorsi stretch","1 x 30 second hold each side (alter grip)","https://youtu.be/7gh2RRpktNQ?t=1046",0],
+["B1","Medicine ball scapular control drill","4 x 15-60 reps @ 2020, rest 20 sec","https://youtu.be/7gh2RRpktNQ?t=1073",20],
+["C1","Low cable (or band) external rotation (ER)","2 x 12-15 reps @ 3010, rest 20 sec","https://youtu.be/7gh2RRpktNQ?t=1121",20],
+["C2","Low cable (or band) internal rotation (IR)","2 x 12-15 reps @ 3010, rest 20 sec","https://youtu.be/7gh2RRpktNQ?t=1170",20],
+["D1","Prone 15° incline dumbbell row with external rotation","2 x 8-12 reps @ 3010, rest 20 sec","https://youtu.be/7gh2RRpktNQ?t=1180",20],
+["E1","Supine neutral grip dumbbell floor press","3 x 10-12 reps @ 3010, rest 30 sec","https://youtu.be/7gh2RRpktNQ?t=1251",30],
+["E2","Half kneeling neutral grip single arm dumbbell row","3 x 10-12 reps @ 3010, rest 30 sec","https://youtu.be/7gh2RRpktNQ?t=1282",30],
+["F1","Standing supinated grip dumbbell bicep curl","3 x 10-12 reps @ 3010, rest 30 sec","https://youtu.be/7gh2RRpktNQ?t=1310",30],
+["F2","Supine flat neutral grip dumbbell tricep extension","3 x 10-12 reps @ 3010, rest 30 sec","https://youtu.be/7gh2RRpktNQ?t=1310",30]];
+const $=s=>document.querySelector(s),K="slapLog1";
+const load=()=>JSON.parse(localStorage.getItem(K)||"[]"),store=v=>localStorage.setItem(K,JSON.stringify(v));
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+$("#dt").value=today();
+function render(){const p=$("#part").value;$("#exs").innerHTML=EX.filter(e=>p=="all"||p.includes(e[0][0])).map(e=>{
+const sets=[1,2,3,4].map(i=>`<div class="set"><b>${i}</b><input inputmode="numeric" placeholder="reps" data-k="${e[0]}r${i}"><input inputmode="decimal" placeholder="weight" data-k="${e[0]}w${i}"></div>`).join("");
+return `<div class="ex" id="x${e[0]}"><h3><span class="id">${e[0]}</span>${e[1]}</h3><a href="${e[3]}" target="_blank" rel="noopener">▶ Tutorial</a>
+<div class="par">${e[2]}</div>${sets}<div class="lbl">Notes</div><input placeholder="feel / pain" data-k="${e[0]}n">
+${e[4]?`<div class="row"><button onclick="start(${e[4]})">Rest ${e[4]}s</button></div>`:""}</div>`}).join("");
+document.querySelectorAll("#exs input").forEach(i=>i.oninput=()=>{const x=i.closest(".ex");x.classList.toggle("done",[...x.querySelectorAll("input[data-k*='r']")].some(a=>a.value))})}
+$("#part").onchange=render;render();
+$("#save").onclick=()=>{const ex={};document.querySelectorAll("#exs input").forEach(i=>{if(i.value)ex[i.dataset.k]=i.value});
+if(!Object.keys(ex).length&&!$("#sn").value)return alert("Nothing to save yet");
+const h=load();h.unshift({id:Date.now(),date:$("#dt").value,week:$("#wk").value,notes:$("#sn").value,ex,saved:new Date().toISOString()});store(h);
+render();$("#sn").value="";alert("Saved ✓")};
+function showH(){const h=load();$("#hl").innerHTML=h.length?h.map(s=>{const ids=EX.filter(e=>[1,2,3,4].some(i=>s.ex[e[0]+"r"+i]||s.ex[e[0]+"w"+i])||s.ex[e[0]+"n"]);
+return `<div class="hist"><button class="x" onclick="del(${s.id})">Delete</button><b>${s.date}</b> · ${s.week}<br>${s.notes?`<small>${esc(s.notes)}</small>`:""}`+ids.map(e=>{const t=[1,2,3,4].filter(i=>s.ex[e[0]+"r"+i]||s.ex[e[0]+"w"+i]).map(i=>`${s.ex[e[0]+"r"+i]||"–"}×${s.ex[e[0]+"w"+i]||"–"}`).join(", ");return `<div><span class="id">${e[0]}</span>${t}${s.ex[e[0]+"n"]?` <small>(${esc(s.ex[e[0]+"n"])})</small>`:""}</div>`}).join("")+`</div>`}).join(""):"<p>No saved workouts yet.</p>"}
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function del(id){if(confirm("Delete this workout?")){store(load().filter(s=>s.id!=id));showH()}}
+function tab(h){$("#log").hidden=h;$("#hist").hidden=!h;$("#tL").classList.toggle("on",!h);$("#tH").classList.toggle("on",h);if(h)showH()}
+$("#tL").onclick=()=>tab(false);$("#tH").onclick=()=>tab(true);
+$("#csv").onclick=()=>{const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';const r=[["date","week","exercise","set","reps","weight","exercise_notes","session_notes"]];
+load().forEach(s=>EX.forEach(e=>{const n=s.ex[e[0]+"n"]||"";let any=false;[1,2,3,4].forEach(i=>{const a=s.ex[e[0]+"r"+i],w=s.ex[e[0]+"w"+i];if(a||w){any=true;r.push([s.date,s.week,e[0]+" "+e[1],i,a||"",w||"",n,s.notes])}});if(!any&&n)r.push([s.date,s.week,e[0]+" "+e[1],"","","",n,s.notes])}));
+const b=new Blob([r.map(x=>x.map(q).join(",")).join("\n")],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="slap-log.csv";a.click()};
+let end=0,iv,ac;
+function beep(){try{ac=ac||new AudioContext();[0,.25,.5].forEach(d=>{const o=ac.createOscillator();o.connect(ac.destination);o.frequency.value=880;o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.15)})}catch(e){}if(navigator.vibrate)navigator.vibrate([300,150,300,150,300])}
+function start(s){try{ac=ac||new AudioContext();ac.resume()}catch(e){}clearInterval(iv);end=Date.now()+s*1000;tick();iv=setInterval(tick,250)}
+function tick(){const l=Math.ceil((end-Date.now())/1000);if(l<=0){clearInterval(iv);$("#tt").textContent="Done!";beep();return}$("#tt").textContent=String(Math.floor(l/60)).padStart(2,"0")+":"+String(l%60).padStart(2,"0")}
+document.querySelectorAll("#timer [data-s]").forEach(b=>b.onclick=()=>start(+b.dataset.s));
+$("#stop").onclick=()=>{clearInterval(iv);$("#tt").textContent="00:00"};
+</script></body></html>
